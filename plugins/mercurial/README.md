@@ -30,7 +30,8 @@ plugins=(... mercurial)
 | `hgl`  | `hg pull -u`                                                                                                |
 | `hglr` | `hg pull --rebase`                                                                                          |
 | `hgo`  | `hg outgoing`                                                                                               |
-
+| `hglg` | `hg log --stat -v`                                                                                          |
+| `hglgp`| `hg log --stat -p -v`                                                                                       |
 ## Prompt usage
 
 - Switch to a theme which uses `hg_prompt_info`
@@ -60,7 +61,7 @@ ZSH_THEME_HG_PROMPT_CLEAN="%{$fg[magenta]%})"
 This is the same as git plugin does. **Note**: additional changes to `.zshrc`, or using a theme designed
 to use `hg_prompt_info`, are required in order for this to work.
 
-## Mantainers
+## Maintainers
 
 - [ptrv](https://github.com/ptrv): original creator
 - [oshybystyi](https://github.com/oshybystyi)
