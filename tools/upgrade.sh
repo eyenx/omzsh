@@ -86,6 +86,24 @@ supports_hyperlinks() {
   return 1
 }
 
+# Adapted from code and information by Anton Kochkov (@XVilka)
+# Source: https://gist.github.com/XVilka/8346728
+supports_truecolor() {
+  case "$COLORTERM" in
+  truecolor|24bit) return 0 ;;
+  esac
+
+  case "$TERM" in
+  iterm           |\
+  tmux-truecolor  |\
+  linux-truecolor |\
+  xterm-truecolor |\
+  screen-truecolor) return 0 ;;
+  esac
+
+  return 1
+}
+
 fmt_link() {
   # $1: text, $2: url, $3: fallback mode
   if supports_hyperlinks; then
@@ -107,15 +125,27 @@ setopt typeset_silent
 typeset -a RAINBOW
 
 if is_tty; then
-  RAINBOW=(
-    "$(printf '\033[38;5;196m')"
-    "$(printf '\033[38;5;202m')"
-    "$(printf '\033[38;5;226m')"
-    "$(printf '\033[38;5;082m')"
-    "$(printf '\033[38;5;021m')"
-    "$(printf '\033[38;5;093m')"
-    "$(printf '\033[38;5;163m')"
-  )
+  if supports_truecolor; then
+    RAINBOW=(
+      "$(printf '\033[38;2;255;0;0m')"
+      "$(printf '\033[38;2;255;97;0m')"
+      "$(printf '\033[38;2;247;255;0m')"
+      "$(printf '\033[38;2;0;255;30m')"
+      "$(printf '\033[38;2;77;0;255m')"
+      "$(printf '\033[38;2;168;0;255m')"
+      "$(printf '\033[38;2;245;0;172m')"
+    )
+  else
+    RAINBOW=(
+      "$(printf '\033[38;5;196m')"
+      "$(printf '\033[38;5;202m')"
+      "$(printf '\033[38;5;226m')"
+      "$(printf '\033[38;5;082m')"
+      "$(printf '\033[38;5;021m')"
+      "$(printf '\033[38;5;093m')"
+      "$(printf '\033[38;5;163m')"
+    )
+  fi
 
   RED=$(printf '\033[31m')
   GREEN=$(printf '\033[32m')
@@ -165,17 +195,30 @@ last_commit=$(git rev-parse "$branch")
 
 # Update Oh My Zsh
 printf "${BLUE}%s${RESET}\n" "Updating Oh My Zsh"
-last_commit=$(git rev-parse HEAD)
-if git fetch upstream
-then
-  git merge upstream/master
-  message="Hooray! Oh My Zsh has been updated!"
-  printf '%s         %s__      %s           %s        %s       %s     %s__   %s\n' $RAINBOW $RESET
-  printf '%s  ____  %s/ /_    %s ____ ___  %s__  __  %s ____  %s_____%s/ /_  %s\n' $RAINBOW $RESET
-  printf '%s / __ \%s/ __ \  %s / __ `__ \%s/ / / / %s /_  / %s/ ___/%s __ \ %s\n' $RAINBOW $RESET
-  printf '%s/ /_/ /%s / / / %s / / / / / /%s /_/ / %s   / /_%s(__  )%s / / / %s\n' $RAINBOW $RESET
-  printf '%s\____/%s_/ /_/ %s /_/ /_/ /_/%s\__, / %s   /___/%s____/%s_/ /_/  %s\n' $RAINBOW $RESET
-  printf '%s    %s        %s           %s /____/ %s       %s     %s          %s\n' $RAINBOW $RESET
+if LANG= git pull --quiet --rebase $remote $branch; then
+  # Check if it was really updated or not
+  if [[ "$(git rev-parse HEAD)" = "$last_commit" ]]; then
+    message="Oh My Zsh is already at the latest version."
+  else
+    message="Hooray! Oh My Zsh has been updated!"
+
+    # Save the commit prior to updating
+    git config oh-my-zsh.lastVersion "$last_commit"
+
+    # Print changelog to the terminal
+    if [[ "$1" = --interactive ]]; then
+      "$ZSH/tools/changelog.sh" HEAD "$last_commit"
+    fi
+
+    printf "${BLUE}%s \`${BOLD}%s${RESET}${BLUE}\`${RESET}\n" "You can see the changelog with" "omz changelog"
+  fi
+
+  printf '%s         %s__      %s           %s        %s       %s     %s__   %s\n'      $RAINBOW $RESET
+  printf '%s  ____  %s/ /_    %s ____ ___  %s__  __  %s ____  %s_____%s/ /_  %s\n'      $RAINBOW $RESET
+  printf '%s / __ \\%s/ __ \\  %s / __ `__ \\%s/ / / / %s /_  / %s/ ___/%s __ \\ %s\n'  $RAINBOW $RESET
+  printf '%s/ /_/ /%s / / / %s / / / / / /%s /_/ / %s   / /_%s(__  )%s / / / %s\n'      $RAINBOW $RESET
+  printf '%s\\____/%s_/ /_/ %s /_/ /_/ /_/%s\\__, / %s   /___/%s____/%s_/ /_/  %s\n'    $RAINBOW $RESET
+  printf '%s    %s        %s           %s /____/ %s       %s     %s          %s\n'      $RAINBOW $RESET
   printf '\n'
   printf "${BLUE}%s${RESET}\n\n" "$message"
   printf "${BLUE}${BOLD}%s %s${RESET}\n" "To keep up with the latest news and updates, follow us on Twitter:" "$(fmt_link @ohmyzsh https://twitter.com/ohmyzsh)"
