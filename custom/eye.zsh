@@ -35,7 +35,7 @@ source ~/.functs
 #fasd
 #eval "$(eval fasd --init auto)"
 #grep color
-export GREP_COLOR='1;31'
+export GREP_COLOR='mt=1;31'
 # Customize to your needs...
 # ZSH_HIGHLIGHTER
 #ZSH_HIGHLIGHT_STYLES[alias]='fg=yellow'
