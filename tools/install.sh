@@ -61,9 +61,11 @@ custom_zsh=${ZSH:+yes}
 zdot="${ZDOTDIR:-$HOME}"
 
 # Default value for $ZSH
-# a) if $ZDOTDIR is supplied: $ZDOTDIR/ohmyzsh
+# a) if $ZDOTDIR is supplied and not $HOME: $ZDOTDIR/ohmyzsh
 # b) otherwise, $HOME/.oh-my-zsh
-ZSH="${ZSH:-${ZDOTDIR:+$ZDOTDIR/ohmyzsh}}"
+if [ -n "$ZDOTDIR" ] && [ "$ZDOTDIR" != "$HOME" ]; then
+  ZSH="${ZSH:-$ZDOTDIR/ohmyzsh}"
+fi
 ZSH="${ZSH:-$HOME/.oh-my-zsh}"
 
 # Default settings
@@ -84,6 +86,10 @@ command_exists() {
 user_can_sudo() {
   # Check if sudo is installed
   command_exists sudo || return 1
+  # Termux can't run sudo, so we can detect it and exit the function early.
+  case "$PREFIX" in
+  *com.termux*) return 1 ;;
+  esac
   # The following command has 3 parts:
   #
   # 1. Run `sudo` with `-v`. Does the following:
@@ -350,7 +356,9 @@ setup_zshrc() {
 
   # Modify $ZSH variable in .zshrc directory to use the literal $ZDOTDIR or $HOME
   omz="$ZSH"
-  [ -z "$ZDOTDIR" ] || omz=$(echo "$omz" | sed "s|^$ZDOTDIR/|\$ZDOTDIR/|")
+  if [ -n "$ZDOTDIR" ] && [ "$ZDOTDIR" != "$HOME" ]; then
+    omz=$(echo "$omz" | sed "s|^$ZDOTDIR/|\$ZDOTDIR/|")
+  fi
   omz=$(echo "$omz" | sed "s|^$HOME/|\$HOME/|")
 
   sed "s|^export ZSH=.*$|export ZSH=\"${omz}\"|" "$ZSH/templates/zshrc.zsh-template" > "$zdot/.zshrc-omztemp"
@@ -519,6 +527,11 @@ EOF
       echo "You'll need to remove it if you want to reinstall."
     fi
     exit 1
+  fi
+
+  # Create ZDOTDIR folder structure if it doesn't exist
+  if [ -n "$ZDOTDIR" ]; then
+    mkdir -p "$ZDOTDIR"
   fi
 
   setup_ohmyzsh
